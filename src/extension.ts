@@ -2,14 +2,16 @@ import * as vscode from 'vscode';
 
 const FIND_FILE_PATTERN = '**/.gitignore';
 const FILE_WATCHER_PATTERN = '**/.gitignore';
-const SHOW_HIDE_COMMAND = 'hide-git-ignored.toggle';
+const HIDE_COMMAND = 'hide-git-ignored.hide';
+const SHOW_COMMAND = 'hide-git-ignored.show';
 const EXCLUDE_GIT_IGNORE = 'explorer.excludeGitIgnore';
 const fileWatcher = vscode.workspace.createFileSystemWatcher(FILE_WATCHER_PATTERN, false, true, false);
 
 let statusBarItem: vscode.StatusBarItem;
 
 async function hasGitIgnoreFile(): Promise<boolean> {
-	return (await vscode.workspace.findFiles(FIND_FILE_PATTERN)).length > 0;
+	const gitIgnoreFound = (await vscode.workspace.findFiles(FIND_FILE_PATTERN)).length > 0;
+	return gitIgnoreFound;
 }
 
 async function hideGitIgnored() {
@@ -17,6 +19,8 @@ async function hideGitIgnored() {
 	const configuration = vscode.workspace.getConfiguration();
 	const currentSettings = configuration.get(EXCLUDE_GIT_IGNORE);
 	configuration.update(EXCLUDE_GIT_IGNORE, !currentSettings, target);
+	vscode.commands.executeCommand('setContext', 'hide-git-ignored:isGitIgnoredExcluded', !currentSettings);
+
 
 	await hasGitIgnoreFile() ? updateStatusBar(!currentSettings) : false;
 }
@@ -33,32 +37,40 @@ function updateStatusBar(excluded: boolean | undefined): void {
 
 const enableCommand = async () => {
 	await hasGitIgnoreFile() ? statusBarItem.show() : statusBarItem.hide();
+	vscode.commands.executeCommand('setContext', 'hide-git-ignored:isGitIgnoredFound', await hasGitIgnoreFile());
 };
 
 function isGitIgnoredExcluded(): boolean | undefined {
 	return vscode.workspace.getConfiguration().get(EXCLUDE_GIT_IGNORE);
 }
 
-const disposable = vscode.commands.registerCommand(SHOW_HIDE_COMMAND, async () => {
+const hideCommand = vscode.commands.registerCommand(HIDE_COMMAND, async () => {
 	await hideGitIgnored();
 });
+
+const showCommand = vscode.commands.registerCommand(SHOW_COMMAND, async () => {
+	await hideGitIgnored();
+});
+
 
 export async function activate(context: vscode.ExtensionContext) {
 	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1);
 
 	fileWatcher.onDidCreate(async () => enableCommand());
 	fileWatcher.onDidDelete(async () => enableCommand());
+	enableCommand();
 
-	(statusBarItem.command = SHOW_HIDE_COMMAND),
+	(statusBarItem.command = HIDE_COMMAND),
 		async () => {
 			hideGitIgnored();
 		};
 
 	updateStatusBar(isGitIgnoredExcluded());
-	enableCommand();
+
 
 	context.subscriptions.push(statusBarItem);
-	context.subscriptions.push(disposable);
+	context.subscriptions.push(hideCommand);
+	context.subscriptions.push(showCommand);
 }
 
 export function deactivate() {

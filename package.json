@@ -2,6 +2,7 @@
 	"name": "hide-git-ignored",
 	"displayName": "Hide Git Ignored",
 	"description": "Show/Hide git ignored files within the Explorer view",
+	"icon": "images/hideGitIgnored128.png",
 	"version": "0.0.1",
 	"license": "MIT",
 	"keywords": [
@@ -11,11 +12,12 @@
 		"show",
 		"hide",
 		"file",
-		"explorer"
+		"explorer",
+		"status bar"
 	],
 	"galleryBanner": {
-		"color": "#000000",
-		"theme": "dark"
+		"color": "#ffffff",
+		"theme": "light"
 	},
 	"publisher": "chrisbibby",
 	"author": {
@@ -40,13 +42,33 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "hide-git-ignored.toggle",
-				"title": "Show/Hide Git Ignored Files"
+				"command": "hide-git-ignored.hide",
+				"title": "Hide Git Ignored Files",
+				"when": "!hide-git-ignored:isGitIgnoredExcluded && hide-git-ignored:isGitIgnoredFound"
+			},
+			{
+				"command": "hide-git-ignored.show",
+				"title": "Show Git Ignored Files",
+				"when": "hide-git-ignored:isGitIgnoredExcluded && hide-git-ignored:isGitIgnoredFound"
 			}
 		],
+		"menus": {
+			"explorer/context": [
+				{
+					"command": "hide-git-ignored.show",
+					"group": "1_copypath@998",
+					"when": "hide-git-ignored:isGitIgnoredExcluded && hide-git-ignored:isGitIgnoredFound"
+				},
+				{
+					"command": "hide-git-ignored.hide",
+					"group": "1_copypath@997",
+					"when": "!hide-git-ignored:isGitIgnoredExcluded && hide-git-ignored:isGitIgnoredFound"
+				}
+			]
+		},
 		"keybindings": [
 			{
-				"command": "hide-git-ignored.toggle",
+				"command": "hide-git-ignored.show",
 				"key": "shift+ctrl+i",
 				"mac": "shift+cmd+i"
 			}
